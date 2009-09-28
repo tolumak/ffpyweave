@@ -24,9 +24,7 @@ data_path = "/var/weave/data/"
 
 import sys
 import os
-import errno
 import time
-import urllib
 import cgi
 
 try:
@@ -46,7 +44,7 @@ except ImportError:
 
 # Load the config file, if there is one
 try:
-	from config import *
+	from config import data_path
 except:
 	pass
 
