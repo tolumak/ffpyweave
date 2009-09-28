@@ -1,0 +1,14 @@
+#coding: utf8
+
+# This is the sample configuration file for pyweave.
+# If you omit a variable, the default will be used.
+#
+# If you prefer, you can set the values directly inside pyweave.cgi and not
+# have a configuration file.
+
+# Directory where entries are stored. Do *NOT* put it in an http-accessible
+# path, as that will leak information. Put it in a separate path and make it
+# read and writeable by the httpd user.
+data_path = "/var/weave/data/"
+
+
