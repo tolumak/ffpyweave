@@ -262,13 +262,11 @@ class Collection (object):
 
 		return ws
 
-	def delete_wbos(self, ids, parent_id, older, newer, limit, offset):
-		# XXX: the spec says there's a sort parameter, but that makes
-		# no sense since we're going to delete them. Maybe there's
-		# something else going on.
+	def delete_wbos(self, ids, parent_id, older, newer, limit, offset,
+			sort):
 		wids = self.list_wbos(ids, parent_id = parent_id,
 				older = older, newer = newer, limit = limit,
-				offset = offset)
+				offset = offset, sort = sort)
 		for wid in wids:
 			w = self.wbos[wid]
 			ppath = self.basepath + '/' + payload_path(wid)
@@ -490,9 +488,10 @@ def handle_cgi():
 			newer = fromform(form, "newer", float)
 			limit = fromform(form, "limit", int)
 			offset = fromform(form, "offset", int)
+			sort = fromform(form, "sort")
 
 			wl = c.delete_wbos(ids, parentid, older, newer, limit,
-					offset)
+					offset, sort)
 			output(time.time())
 
 
