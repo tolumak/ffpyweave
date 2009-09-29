@@ -26,6 +26,7 @@ import sys
 import os
 import time
 import cgi
+import fcntl
 
 try:
 	import cPickle as pickle
@@ -177,7 +178,6 @@ class Storage (object):
 					d[len(COL_PREFIX):]))
 		return cs
 
-# TODO: per-collection locking
 class Collection (object):
 	def __init__(self, basepath, id):
 		self.basepath = basepath + '/' + col_path(id)
@@ -359,6 +359,18 @@ def read_stdin():
 	debug('STDIN: ' + repr(s))
 	return s
 
+def user_lock(user):
+	"""Locks the given user, returns a lock token to pass to
+	user_unlock()."""
+	fd = open(data_path + '/' + user + '/lock', 'w')
+	fcntl.lockf(fd, fcntl.LOCK_EX)
+	return fd
+
+def user_unlock(token):
+	"""Unlocks the given user. The token must be the one returned by
+	user_lock()."""
+	fcntl.lockf(token, fcntl.LOCK_UN)
+
 def handle_cgi():
 	user = os.environ.get('REMOTE_USER', None)
 	method = os.environ['REQUEST_METHOD']
@@ -371,6 +383,8 @@ def handle_cgi():
 	if user != path_user:
 		error(401, "User/path mismatch: %s - %s" % (user, path_user))
 		return
+
+	lock_token = user_lock(user)
 
 	storage = Storage(data_path + '/' + user)
 
@@ -492,6 +506,8 @@ def handle_cgi():
 					offset, sort)
 			output(time.time())
 
+
+	user_unlock(lock_token)
 
 def handle_cmd():
 	print "This is a CGI application."
