@@ -359,6 +359,122 @@ def read_stdin():
 	debug('STDIN: ' + repr(s))
 	return s
 
+def do_get(path, storage):
+	if len(path) < 2:
+		bad_request("Path too short")
+		return
+
+	if path[0] == 'info':
+		if path[1] == 'collections':
+			cs = storage.list_collections()
+			d = {}
+			for c in cs:
+				d[c.id] = c.mtime
+			output(d)
+		elif path[1] == 'collection_counts':
+			cs = storage.list_collections()
+			d = {}
+			for c in cs:
+				d[c.id] = len(c.wbos)
+			output(d)
+		elif path[1] == 'quota':
+			# TODO
+			output((1, 100 * 1024))
+		else:
+			bad_request("Unknown info request")
+	elif path[0] == 'storage':
+		try:
+			c = storage.get_collection(path[1])
+		except KeyError:
+			# dummy empty collection
+			c = Collection(storage.basepath, path[1])
+
+		if len(path) == 3:
+			if path[2] in c.wbos:
+				w = c.wbos[path[2]]
+				output(w.to_dict(c.basepath))
+			else:
+				error(404, "WBO not found")
+		else:
+			form = cgi.FieldStorage()
+			ids = fromform(form, "ids")
+			predecessorid = fromform(form, "predecessorid")
+			parentid = fromform(form, "parentid")
+			older = fromform(form, "older", float)
+			newer = fromform(form, "newer", float)
+			full = fromform(form, "full")
+			index_above = fromform(form, "index_above", int)
+			index_below = fromform(form, "index_below", int)
+			limit = fromform(form, "limit", int)
+			offset = fromform(form, "offset", int)
+			sort = fromform(form, "sort")
+
+			wl = c.list_wbos(ids, predecessorid, parentid, older,
+					newer, full, index_above, index_below,
+					limit, offset, sort)
+			output(wl)
+	else:
+		bad_request("Unknown GET request")
+
+def do_put(path, storage):
+	if path[0] != 'storage' or len(path) != 3:
+		bad_request("Malformed PUT path")
+		return
+
+	c = storage.get_collection(path[1], create = True)
+	ts = c.put_wbo_json(path[2], json.loads(read_stdin()))
+	c.save_wbos()
+	output(ts, timestamp = ts)
+
+def do_post(path, storage):
+	if path[0] != 'storage' or len(path) != 2:
+		bad_request("Malformed POST path")
+		return
+
+	ts = time.time()
+	c = storage.get_collection(path[1], create = True)
+	objs = json.loads(read_stdin())
+
+	res = {
+		'modified': ts,
+		'success': [],
+		'failed': {},
+	}
+	for o in objs:
+		c.put_wbo_json(o['id'], o, ts)
+		res['success'].append(o['id'])
+	c.save_wbos()
+	output(res, timestamp = ts)
+
+def do_delete(path, storage):
+	if path[0] != 'storage':
+		bad_request("Malformed DELETE path")
+		return
+
+	try:
+		c = storage.get_collection(path[1])
+	except KeyError:
+		output(time.time())
+		return
+
+	if len(path) == 3:
+		del c.wbos[path[2]]
+		c.save_wbos()
+		output(time.time())
+	else:
+		form = cgi.FieldStorage()
+		ids = fromform(form, "ids")
+		parentid = fromform(form, "parentid")
+		older = fromform(form, "older", float)
+		newer = fromform(form, "newer", float)
+		limit = fromform(form, "limit", int)
+		offset = fromform(form, "offset", int)
+		sort = fromform(form, "sort")
+
+		wl = c.delete_wbos(ids, parentid, older, newer, limit,
+				offset, sort)
+		output(time.time())
+
 def user_lock(user):
 	"""Locks the given user, returns a lock token to pass to
 	user_unlock()."""
@@ -388,124 +504,14 @@ def handle_cgi():
 
 	storage = Storage(data_path + '/' + user)
 
-	# TODO: put these into different functions and clean them up
 	if method == 'GET':
-		if len(path) < 2:
-			bad_request("Path too short")
-		if path[0] == 'info':
-			if path[1] == 'collections':
-				cs = storage.list_collections()
-				d = {}
-				for c in cs:
-					d[c.id] = c.mtime
-				output(d)
-			elif path[1] == 'collection_counts':
-				cs = storage.list_collections()
-				d = {}
-				for c in cs:
-					d[c.id] = len(c.wbos)
-				output(d)
-			elif path[1] == 'quota':
-				# TODO
-				output((1, 100 * 1024))
-			else:
-				bad_request("Unknown info request")
-		elif path[0] == 'storage':
-			try:
-				c = storage.get_collection(path[1])
-			except KeyError:
-				# dummy empty collection
-				c = Collection(storage.basepath, path[1])
-
-			if len(path) == 3:
-				if path[2] in c.wbos:
-					w = c.wbos[path[2]]
-					output(w.to_dict(c.basepath))
-				else:
-					error(404, "WBO not found")
-			else:
-				form = cgi.FieldStorage()
-				ids = fromform(form, "ids")
-				predecessorid = fromform(form, "predecessorid")
-				parentid = fromform(form, "parentid")
-				older = fromform(form, "older", float)
-				newer = fromform(form, "newer", float)
-				full = fromform(form, "full")
-				index_above = fromform(form, "index_above",
-						int)
-				index_below = fromform(form, "index_below",
-						int)
-				limit = fromform(form, "limit", int)
-				offset = fromform(form, "offset", int)
-				sort = fromform(form, "sort")
-
-				wl = c.list_wbos(ids, predecessorid, parentid,
-						older, newer, full,
-						index_above, index_below,
-						limit, offset, sort)
-				output(wl)
-		else:
-			bad_request("Unknown GET request")
-
+		do_get(path, storage)
 	elif method == 'PUT':
-		if path[0] != 'storage' or len(path) != 3:
-			bad_request("Malformed PUT path")
-			return
-
-		c = storage.get_collection(path[1], create = True)
-		ts = c.put_wbo_json(path[2], json.loads(read_stdin()))
-		c.save_wbos()
-		output(ts, timestamp = ts)
-
+		do_put(path, storage)
 	elif method == 'POST':
-		if path[0] != 'storage' or len(path) != 2:
-			bad_request("Malformed POST path")
-			return
-
-		ts = time.time()
-		c = storage.get_collection(path[1], create = True)
-		objs = json.loads(read_stdin())
-
-		res = {
-			'modified': ts,
-			'success': [],
-			'failed': {},
-		}
-		for o in objs:
-			c.put_wbo_json(o['id'], o, ts)
-			res['success'].append(o['id'])
-		c.save_wbos()
-		output(res, timestamp = ts)
-
+		do_post(path, storage)
 	elif method == 'DELETE':
-		if path[0] != 'storage':
-			bad_request("Malformed DELETE path")
-			return
-
-		try:
-			c = storage.get_collection(path[1])
-		except KeyError:
-			output(time.time())
-			return
-
-		if len(path) == 3:
-			del c.wbos[path[2]]
-			c.save_wbos()
-			output(time.time())
-		else:
-			form = cgi.FieldStorage()
-			ids = fromform(form, "ids")
-			parentid = fromform(form, "parentid")
-			older = fromform(form, "older", float)
-			newer = fromform(form, "newer", float)
-			limit = fromform(form, "limit", int)
-			offset = fromform(form, "offset", int)
-			sort = fromform(form, "sort")
-
-			wl = c.delete_wbos(ids, parentid, older, newer, limit,
-					offset, sort)
-			output(time.time())
-
+		do_delete(path, storage)
 
 	user_unlock(lock_token)
 
