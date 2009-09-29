@@ -520,12 +520,13 @@ def handle_cmd():
 	print "It only runs inside a web server."
 	return 1
 
-if os.environ.has_key('GATEWAY_INTERFACE'):
-	try:
-		handle_cgi()
-	except Exception, e:
-		error(500, "Unhandled exception")
-		raise
-else:
-	sys.exit(handle_cmd())
+if __name__ == '__main__':
+	if os.environ.has_key('GATEWAY_INTERFACE'):
+		try:
+			handle_cgi()
+		except Exception, e:
+			error(500, "Unhandled exception")
+			raise
+	else:
+		sys.exit(handle_cmd())
 
