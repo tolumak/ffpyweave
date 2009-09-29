@@ -336,9 +336,7 @@ def output(obj, timestamp = None):
 		import struct
 		print "Content-type: application/whoisi"
 		print
-		# The spec doesn't specify the endianness of the integer, send
-		# it in host byte order. Note we assume o is a wbo.
-		sys.stdout.write(struct.pack('I', obj.id) + json.dumps(obj))
+		sys.stdout.write(struct.pack('!I', obj.id) + json.dumps(obj))
 	elif accept == 'application/newlines':
 		print "Content-type: application/newlines"
 		print
