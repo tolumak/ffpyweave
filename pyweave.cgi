@@ -294,7 +294,7 @@ def path_info(path):
 	if len(p) < 3:
 		raise InvalidPathError
 
-	if p[0] != '0.5':
+	if p[0] not in ('0.5', '1.0'):
 		raise InvalidPathError
 
 	if not os.path.exists(data_path + '/' + fsencode(p[1])):
