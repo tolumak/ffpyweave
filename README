@@ -1,0 +1,46 @@
+
+pyweave - A single-file Mozilla Weave server
+--------------------------------------------
+
+Mozilla Weave is a Firefox extension that allows you to synchronize (among
+other things) your bookmarks, open tabs, and preferences, across different
+computers.
+
+To do so, it stores the information on a server. The most popular server is
+Mozilla's, but you can also use your own.
+
+This project is a simple server implementation, that aims to be simple to set
+up, have no requirements besides a CGI-enabled http server and a recent enough
+Python, and scale well for a small number of users.
+
+
+Installation procedure
+----------------------
+
+ - Copy pyweave.cgi somewhere inside your web directory where it can run (and
+   make sure it has execution permissions).
+ - mkdir <data_dir>; chown www-data:www-data <data_dir>
+   where data_dir is a directory to use to store the data (must not be
+   available via web, for obvious security reasons), and www-data is the
+   username/group your httpd runs as.
+ - cp config.py.sample config.py; $EDITOR config.py
+   to set <data_dir>
+
+There is no user administration or web interface of any kind. To add a user
+named "asdf", add it to your httpd auth file, and then:
+
+ - mkdir <data_dir>/asdf
+ - chown www-data:www-data <data_dir>/asdf
+
+
+To configure weave to use this servers, go to the preferences and set the
+server to
+
+	https://your_server/path/to/pyweave.cgi/
+
+And that's it.
+
+
+If you have any suggestions, patches or bug reports, please send them to
+Alberto Bertogli (albertito@blitiri.com.ar).
+
