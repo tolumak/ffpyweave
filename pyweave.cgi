@@ -303,6 +303,7 @@ def path_info(path):
 	return p[1], p[2:]
 
 def debug(msg):
+	return
 	sys.stderr.write('DEBUG: ' + str(msg) + '\n')
 
 def error(http, msg = None):
@@ -485,7 +486,11 @@ def user_lock(user):
 def user_unlock(token):
 	"""Unlocks the given user. The token must be the one returned by
 	user_lock()."""
+	# Note we don't really need to do this, as the garbage collector
+	# should take care of disposing the fd as it's no longer needed, and
+	# the lock goes away on close(). We just do it to be tidy.
 	fcntl.lockf(token, fcntl.LOCK_UN)
+	token.close()
 
 def handle_cgi():
 	user = os.environ.get('REMOTE_USER', None)
