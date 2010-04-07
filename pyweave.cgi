@@ -302,9 +302,13 @@ def path_info(path):
 
 	return p[1], p[2:]
 
-def debug(msg):
+def debug(msg, *args):
 	return
-	sys.stderr.write('DEBUG: ' + str(msg) + '\n')
+	m = msg
+	if args:
+		a = [ str(arg) for arg in args ]
+		m += ' ' + ' '.join(a)
+	sys.stderr.write('DEBUG: ' + m + '\n')
 
 def error(http, msg = None):
 	et = {
@@ -514,6 +518,7 @@ def handle_cgi():
 
 	storage = Storage(data_path + '/' + user)
 
+	debug("HANDLE", user, storage, method)
 	if method == 'GET':
 		do_get(path, storage)
 	elif method == 'PUT':
