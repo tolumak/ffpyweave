@@ -350,7 +350,12 @@ def output(obj, timestamp = None):
 		print json.dumps(obj)
 
 def fromform(form, name, convert = None):
-	v = form.getfirst(name, None)
+	# if no form is sent, form.getfirst() raises an exception, so handle
+	# this by avoiding the call
+	if form:
+		v = form.getfirst(name, None)
+	else:
+		v = None
 	if convert and v is not None:
 		return convert(v)
 	return v
