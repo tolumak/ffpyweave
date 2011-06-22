@@ -16,6 +16,9 @@
 # read and writeable by the httpd user.
 data_path = "/var/weave/data/"
 
+# Server path. Path to the pyweave.cgi script starting from DocumentRoot. 
+server_path = "/pyweave/pyweave.cgi/"
+
 #
 # End of configuration
 # DO *NOT* EDIT ANYTHING PAST HERE
@@ -27,6 +30,7 @@ import os
 import time
 import cgi
 import fcntl
+import string
 
 try:
 	import cPickle as pickle
@@ -289,12 +293,14 @@ def path_info(path):
 	"""Checks the basic path information, and returns the username and the
 	path components (as a list). Raises an exception if the path is
 	invalid."""
-
 	p = path.strip('/').split('/')
+	if p[0] == 'user':
+		p.pop(0)
+
 	if len(p) < 3:
 		raise InvalidPathError
 
-	if p[0] not in ('0.5', '1.0'):
+	if p[0] not in ('0.5', '1.0', '1.1'):
 		raise InvalidPathError
 
 	if not os.path.exists(data_path + '/' + fsencode(p[1])):
@@ -330,6 +336,12 @@ def error(http, msg = None):
 
 def bad_request(msg = None):
 	error(400, msg)
+
+def output_plain(obj):
+	print 'X-Weave-Timestamp: %.2f' % time.time()
+	print "Content-type: text/plain"
+	print
+	print obj
 
 def output(obj, timestamp = None):
 	if timestamp is None:
@@ -423,6 +435,15 @@ def do_get(path, storage):
 					newer, full, index_above, index_below,
 					limit, offset, sort)
 			output(wl)
+	elif path[0] == 'node' and path[1] == 'weave':
+		try:
+			if os.environ['HTTPS'] == 'on':
+				output_plain('https://' + os.environ['SERVER_NAME'] + server_path)
+			else:
+				output_plain('http://' + os.environ['SERVER_NAME'] + server_path)
+		except KeyError:
+			output_plain('http://' + os.environ['SERVER_NAME'] + server_path)
+				
 	else:
 		bad_request("Unknown GET request")
 

@@ -11,4 +11,5 @@
 # read and writeable by the httpd user.
 data_path = "/var/weave/data/"
 
-
+# Server path. Path to the pyweave.cgi script starting from DocumentRoot. 
+server_path = "/pyweave/pyweave.cgi/"
