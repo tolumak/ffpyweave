@@ -1,3 +1,10 @@
+This repository exists only to patch pyweave to support Firefox 4, Firefox5, ...
+
+Below is the original README by Alberto Bertogli who is the author of the software.
+--
+Michel Lafon-Puyo
+
+===================================================================================
 
 pyweave - A single-file Mozilla Weave server
 --------------------------------------------
