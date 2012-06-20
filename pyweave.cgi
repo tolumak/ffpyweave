@@ -410,7 +410,6 @@ def do_get(path, storage):
 		except KeyError:
 			# dummy empty collection
 			c = Collection(storage.basepath, path[1])
-
 		if len(path) == 3:
 			if path[2] in c.wbos:
 				w = c.wbos[path[2]]
@@ -481,10 +480,13 @@ def do_delete(path, storage):
 	if path[0] != 'storage':
 		bad_request("Malformed DELETE path")
 		return
-
-	try:
-		c = storage.get_collection(path[1])
-	except KeyError:
+	if (len(path) > 1):
+		try:
+			c = storage.get_collection(path[1])
+		except KeyError:
+			output(time.time())
+			return
+	else:
 		output(time.time())
 		return
 
