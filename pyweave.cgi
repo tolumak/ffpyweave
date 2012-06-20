@@ -326,7 +326,7 @@ def error(http, msg = None):
 	}
 
 	debug('pyweave err %d: %s\n' % (http, msg))
-	print 'HTTP/1.1 ' + str(http) + ' ' + et.get(http, str(http))
+	print 'Status: ' + str(http) + ' ' + et.get(http, str(http))
 	if msg:
 		print 'X-Weave-Alert:', msg
 		print 'Content-type: text/plain'
